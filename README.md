@@ -79,7 +79,6 @@ python drug_search.py [옵션] [검색값]
 |------|------|--------|
 | `--no-search-identical` | 동일성분 의약품 검색 생략 | False |
 | `--output` | 저장할 엑셀 파일 경로 | `drug_data_api.xlsx` |
-| `--per-page` | 페이지당 조회 건수 | 1000 |
 | `--help` | 도움말 표시 | - |
 
 ---
