@@ -10,7 +10,7 @@ import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # API 키 설정
-KEY = "2dcedad5e98c1f990604e7459af7521dcabff470efc37f9a61ac336579968b5d"
+KEY = "YOUR_API_KEY_HERE"  # 여기에 실제 API 키를 입력하세요
 
 
 def load_drug_data_api(output_path: str = 'drug_data_api.xlsx', per_page: int = 1000) -> Optional[pd.DataFrame]:

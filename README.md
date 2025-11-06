@@ -68,10 +68,10 @@ python drug_search.py [옵션] [검색값]
 
 | 옵션 | 설명 | 예시 |
 |------|------|------|
-| `--gnlNmCd` | 성분코드 (일반명코드) | `--gnlNmCd 250501ATB` |
-| `--itmNm` | 품목명 (의약품 이름) | `--itmNm 졸피드정` |
-| `--mdsCd` | 제품코드 | `--mdsCd 653006900` |
-| `--mnfEntpNm` | 제조업체명 | `--mnfEntpNm 하나제약` |
+| `--gnlNmCd` | 성분코드 (일반명코드) | `--gnlNmCd "250501ATB"` |
+| `--itmNm` | 품목명 (의약품 이름) | `--itmNm "졸피드정"` |
+| `--mdsCd` | 제품코드 | `--mdsCd "653006900"` |
+| `--mnfEntpNm` | 제조업체명 | `--mnfEntpNm "하나제약"` |
 
 ### 추가 옵션
 
@@ -89,7 +89,7 @@ python drug_search.py [옵션] [검색값]
 ### 1. 품목명으로 검색
 
 ```bash
-python drug_search.py --itmNm 졸피드정
+python drug_search.py --itmNm "졸피드정"
 ```
 
 **설명**: "졸피드정"이라는 품목명으로 의약품을 검색하고, 동일 성분의 모든 의약품을 조회합니다.
@@ -99,7 +99,7 @@ python drug_search.py --itmNm 졸피드정
 ### 2. 성분코드로 검색
 
 ```bash
-python drug_search.py --gnlNmCd 250501ATB
+python drug_search.py --gnlNmCd "250501ATB"
 ```
 
 **설명**: 성분코드 "250501ATB"를 가진 의약품을 직접 검색합니다.
@@ -109,7 +109,7 @@ python drug_search.py --gnlNmCd 250501ATB
 ### 3. 제품코드로 검색
 
 ```bash
-python drug_search.py --mdsCd 653006900
+python drug_search.py --mdsCd "653006900"
 ```
 
 **설명**: 제품코드 "653006900"로 특정 제품을 검색합니다.
@@ -119,27 +119,27 @@ python drug_search.py --mdsCd 653006900
 ### 4. 제조업체명으로 검색
 
 ```bash
-python drug_search.py --mnfEntpNm 건일제약
+python drug_search.py --mnfEntpNm "하나제약"
 ```
 
-**설명**: "건일제약"에서 제조한 의약품 목록을 조회합니다.
+**설명**: "하나제약"에서 제조한 의약품 목록을 조회합니다.
 
 ---
 
 ### 5. 여러 조건 조합
 
 ```bash
-python drug_search.py --itmNm 아시콘정 --mnfEntpNm 건일제약
+python drug_search.py --itmNm "아시콘정" --mnfEntpNm "하나제약"
 ```
 
-**설명**: 품목명이 "아시콘정"이고 제조업체가 "건일제약"인 의약품을 검색합니다.
+**설명**: 품목명이 "아시콘정"이고 제조업체가 "하나제약"인 의약품을 검색합니다.
 
 ---
 
 ### 6. 동일성분 검색 생략
 
 ```bash
-python drug_search.py --itmNm 졸피드정 --no-search-identical
+python drug_search.py --itmNm "졸피드정" --no-search-identical
 ```
 
 **설명**: "졸피드정" 정보만 조회하고, 동일성분 의약품 검색은 건너뜁니다.
@@ -149,7 +149,7 @@ python drug_search.py --itmNm 졸피드정 --no-search-identical
 ### 7. 출력 파일 경로 지정
 
 ```bash
-python drug_search.py --itmNm 졸피드정 --output ./results/drug_data.xlsx
+python drug_search.py --itmNm "졸피드정" --output ./results/drug_data.xlsx
 ```
 
 **설명**: 결과를 `./results/drug_data.xlsx` 파일로 저장합니다.
