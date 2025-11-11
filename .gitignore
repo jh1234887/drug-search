@@ -1,0 +1,15 @@
+env
+__pycache__
+.DS_Store
+.vscode
+.idea
+.pytest_cache
+.ruff_cache
+.venv
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.development
+.env.test
+*.xlsx

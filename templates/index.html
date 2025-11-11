@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>의약품 검색</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <!-- 헤더 -->
+        <header class="header">
+            <h1 class="logo">
+                <span class="logo-icon">💊</span>
+                의약품 검색
+            </h1>
+            <p class="subtitle">공공데이터를 활용한 의약품 정보 조회</p>
+        </header>
+
+        <!-- 검색 폼 -->
+        <section class="search-section">
+            <form id="searchForm" class="search-form">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="itmNm">품목명</label>
+                        <input 
+                            type="text" 
+                            id="itmNm" 
+                            name="itmNm" 
+                            placeholder="예: 졸피드정"
+                            class="input-field"
+                        >
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="gnlNmCd">성분코드</label>
+                        <input 
+                            type="text" 
+                            id="gnlNmCd" 
+                            name="gnlNmCd" 
+                            placeholder="예: 281700ATB"
+                            class="input-field"
+                        >
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="mdsCd">제품코드</label>
+                        <input 
+                            type="text" 
+                            id="mdsCd" 
+                            name="mdsCd" 
+                            placeholder="예: 200003456"
+                            class="input-field"
+                        >
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="mnfEntpNm">제조업체명</label>
+                        <input 
+                            type="text" 
+                            id="mnfEntpNm" 
+                            name="mnfEntpNm" 
+                            placeholder="예: 유한양행"
+                            class="input-field"
+                        >
+                    </div>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary" id="searchBtn">
+                        <span class="btn-icon">🔍</span>
+                        검색
+                    </button>
+                    <button type="button" class="btn btn-secondary" id="resetBtn">
+                        초기화
+                    </button>
+                </div>
+            </form>
+        </section>
+
+        <!-- 로딩 인디케이터 -->
+        <div id="loading" class="loading hidden">
+            <div class="spinner"></div>
+            <p>검색 중...</p>
+        </div>
+
+        <!-- 검색 결과 -->
+        <section id="resultsSection" class="results-section hidden">
+            <div class="results-header">
+                <h2>검색 결과</h2>
+                <span id="resultCount" class="result-count"></span>
+            </div>
+            <div id="searchResults" class="results-grid"></div>
+        </section>
+
+        <!-- 동일성분 의약품 -->
+        <section id="identicalSection" class="identical-section hidden">
+            <div class="section-header">
+                <h2>동일성분 의약품</h2>
+                <span id="identicalCount" class="result-count"></span>
+            </div>
+            <div id="identicalResults" class="results-grid"></div>
+        </section>
+
+        <!-- 에러 메시지 -->
+        <div id="errorMessage" class="error-message hidden"></div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
+

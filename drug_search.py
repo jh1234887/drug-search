@@ -5,13 +5,17 @@ import os
 import argparse
 from typing import Optional, List, Dict
 import urllib3
+from dotenv import load_dotenv  
 
 # SSL 경고 비활성화 (필요한 경우)
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # API 키 설정
-KEY = "YOUR_API_KEY_HERE"  # 여기에 실제 API 키를 입력하세요
+# KEY = "YOUR_API_KEY_HERE"  # 여기에 실제 API 키를 입력하세요
 
+load_dotenv('env')
+
+KEY = os.getenv("KEY")
 
 def load_drug_data_api(output_path: str = 'drug_data_api.xlsx', per_page: int = 1000) -> Optional[pd.DataFrame]:
     """
@@ -37,7 +41,7 @@ def load_drug_data_api(output_path: str = 'drug_data_api.xlsx', per_page: int = 
         
         while True:
             params = {
-                "serviceKey": JHKEY,
+                "serviceKey": KEY,
                 "page": page,
                 "perPage": per_page,
                 "returnType": "JSON"
@@ -352,7 +356,8 @@ def main_with_args():
     print("=" * 80)
     
     # 의약품 정보 검색
-    if not args.gnlNmCd:
+    found_gnlNmCd = None
+    if not args.gnlNmCd:  # 성분코드가 직접 입력되지 않은 경우에만 검색
         found_gnlNmCd = search_drug_info(
             gnlNmCd=args.gnlNmCd,
             itmNm=args.itmNm,
@@ -370,7 +375,7 @@ def main_with_args():
             print("의약품 데이터 로드 중...")
             print('='*80)
             
-            df = load_drug_data_api(output_path=args.output, per_page=args.per_page)
+            df = load_drug_data_api(output_path=args.output, per_page=1000)  # 기본값 1000 사용
             
             if df is not None:
                 find_identical_ingredients(target_gnlNmCd, df)
