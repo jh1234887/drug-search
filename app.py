@@ -38,9 +38,9 @@ def search_drug():
                 'error': '최소 하나의 검색 조건을 입력해주세요.'
             }), 400
         
-        # 성분코드만 입력된 경우 동일성분 의약품 검색
-        if gnlNmCd and not any([itmNm, mdsCd, mnfEntpNm]):
-            # 동일성분 의약품 검색 로직
+        # 성분코드가 포함된 경우 처리
+        if gnlNmCd:
+            # 성분코드로 동일성분 의약품 검색
             global cached_df
             
             # 캐시된 데이터가 없으면 로드
@@ -63,6 +63,45 @@ def search_drug():
                     'results': []
                 })
             
+            # 다른 조건이 있으면 필터링
+            if any([itmNm, mdsCd, mnfEntpNm]):
+                # 제품코드로 필터링
+                if mdsCd:
+                    mds_cd_col = None
+                    for col in identical.columns:
+                        if '제품코드' in col or 'mdsCd' in col or col == 'mdsCd':
+                            mds_cd_col = col
+                            break
+                    if mds_cd_col:
+                        identical = identical[identical[mds_cd_col] == mdsCd]
+                
+                # 제조업체명으로 필터링
+                if mnfEntpNm:
+                    mnf_col = None
+                    for col in identical.columns:
+                        if '제조업체' in col or 'mnfEntpNm' in col or '제조업체명' in col:
+                            mnf_col = col
+                            break
+                    if mnf_col:
+                        identical = identical[identical[mnf_col].str.contains(mnfEntpNm, na=False, case=False)]
+                
+                # 품목명으로 필터링
+                if itmNm:
+                    item_name_col = None
+                    for col in identical.columns:
+                        if '품목명' in col or '제품명' in col or col == 'itmNm':
+                            item_name_col = col
+                            break
+                    if item_name_col:
+                        identical = identical[identical[item_name_col].str.contains(itmNm, na=False, case=False)]
+            
+            if identical.empty:
+                return jsonify({
+                    'success': True,
+                    'isIdenticalSearch': False,
+                    'results': []
+                })
+            
             # 품목명 컬럼 찾기
             item_name_col = None
             for col in identical.columns:
@@ -75,7 +114,7 @@ def search_drug():
                 results = identical.to_dict('records')
                 return jsonify({
                     'success': True,
-                    'isIdenticalSearch': True,
+                    'isIdenticalSearch': False,
                     'results': results
                 })
             
@@ -97,15 +136,28 @@ def search_drug():
                 if not item_name or pd.isna(item_name):
                     continue
                 
+                # 품목명으로 검색하되, 다른 조건도 함께 전달
                 search_results = get_detailed_search_results(
                     itmNm=str(item_name),
+                    mdsCd=mdsCd if mdsCd else None,
+                    mnfEntpNm=mnfEntpNm if mnfEntpNm else None,
                     num_rows=100  # 각 품목명당 최대 100개
                 )
                 
-                # 중복 제거 (제품코드 기준)
+                # 결과 필터링 (제조업체명, 제품코드)
                 for result in search_results:
                     mds_cd = result.get('mdsCd')
                     if mds_cd and mds_cd not in seen_items:
+                        # 제조업체명 필터링
+                        if mnfEntpNm:
+                            mnf_result = result.get('mnfEntpNm', '')
+                            if mnfEntpNm.lower() not in str(mnf_result).lower():
+                                continue
+                        
+                        # 제품코드 필터링
+                        if mdsCd and result.get('mdsCd') != mdsCd:
+                            continue
+                        
                         seen_items.add(mds_cd)
                         all_results.append(result)
             
@@ -115,9 +167,9 @@ def search_drug():
                 'results': all_results
             })
         
-        # 그 외의 경우 일반 검색
+        # 성분코드 없이 다른 조건만 입력된 경우 일반 검색
         search_results = get_detailed_search_results(
-            gnlNmCd=gnlNmCd,
+            gnlNmCd=None,
             itmNm=itmNm,
             mdsCd=mdsCd,
             mnfEntpNm=mnfEntpNm,
@@ -193,7 +245,7 @@ def get_detailed_search_results(
     mnfEntpNm: Optional[str] = None,
     num_rows: int = 20
 ) -> List[Dict]:
-    """상세 검색 결과 반환"""
+    """상세 검색 결과 반환 (페이지네이션 지원)"""
     endpoint = "https://apis.data.go.kr/B551182/dgamtCrtrInfoService1.2/getDgamtList"
     
     search_params = {}
@@ -206,68 +258,107 @@ def get_detailed_search_results(
     if mnfEntpNm:
         search_params["mnfEntpNm"] = mnfEntpNm
     
-    params = {
-        "ServiceKey": KEY,
-        "numOfRows": str(num_rows),
-        "pageNo": "1"
-    }
-    params.update(search_params)
+    all_results = []
+    page = 1
+    total_count = 0
     
-    try:
-        response = requests.get(endpoint, params=params, verify=False, timeout=30)
+    while True:
+        params = {
+            "ServiceKey": KEY,
+            "numOfRows": str(num_rows),
+            "pageNo": str(page)
+        }
+        params.update(search_params)
         
-        if response.status_code != 200:
-            print(f"API 요청 실패: 상태 코드 {response.status_code}")
-            print(f"응답 내용: {response.text[:500]}")
-            return []
-        
-        root = ET.fromstring(response.content)
-        
-        # resultCode 확인
-        result_code = root.find('header/resultCode')
-        if result_code is not None and result_code.text != '00':
-            result_msg = root.find('header/resultMsg')
-            error_msg = result_msg.text if result_msg is not None else '알 수 없는 오류'
-            print(f"API 오류: {error_msg}")
-            return []
-        
-        body = root.find('body')
-        
-        if body is None:
-            print("응답에 body 요소가 없습니다.")
-            return []
-        
-        # totalCount 확인
-        total_count = body.find('totalCount')
-        total_count_text = total_count.text if total_count is not None else '0'
-        
-        if int(total_count_text) == 0:
-            print(f"검색 결과가 없습니다. (totalCount: {total_count_text})")
-            return []
-        
-        items = body.find('items')
-        if items is None:
-            print("응답에 items 요소가 없습니다.")
-            return []
-        
-        results = []
-        for item in items.findall('item'):
-            result = {}
-            for child in item:
-                result[child.tag] = child.text if child.text else None
-            results.append(result)
-        
-        return results
-    except ET.ParseError as e:
-        print(f"XML 파싱 오류: {e}")
-        if 'response' in locals():
-            print(f"응답 내용: {response.content[:500]}")
-        return []
-    except Exception as e:
-        print(f"오류 발생: {e}")
-        import traceback
-        traceback.print_exc()
-        return []
+        try:
+            response = requests.get(endpoint, params=params, verify=False, timeout=30)
+            
+            if response.status_code != 200:
+                print(f"API 요청 실패: 상태 코드 {response.status_code}")
+                if page == 1:
+                    print(f"응답 내용: {response.text[:500]}")
+                break
+            
+            root = ET.fromstring(response.content)
+            
+            # resultCode 확인
+            result_code = root.find('header/resultCode')
+            if result_code is not None and result_code.text != '00':
+                result_msg = root.find('header/resultMsg')
+                error_msg = result_msg.text if result_msg is not None else '알 수 없는 오류'
+                print(f"API 오류: {error_msg}")
+                if page == 1:
+                    return []
+                break
+            
+            body = root.find('body')
+            
+            if body is None:
+                print("응답에 body 요소가 없습니다.")
+                if page == 1:
+                    return []
+                break
+            
+            # totalCount 확인 (첫 페이지에서만)
+            if page == 1:
+                total_count_elem = body.find('totalCount')
+                total_count_text = total_count_elem.text if total_count_elem is not None else '0'
+                total_count = int(total_count_text)
+                
+                if total_count == 0:
+                    print(f"검색 결과가 없습니다. (totalCount: {total_count_text})")
+                    return []
+                
+                print(f"전체 검색 결과: {total_count}건, 페이지네이션 시작...")
+            
+            items = body.find('items')
+            if items is None:
+                print(f"페이지 {page}: items 요소가 없습니다.")
+                break
+            
+            page_results = []
+            for item in items.findall('item'):
+                result = {}
+                for child in item:
+                    result[child.tag] = child.text if child.text else None
+                page_results.append(result)
+            
+            if not page_results:
+                # 더 이상 결과가 없으면 종료
+                break
+            
+            all_results.extend(page_results)
+            
+            # 진행 상황 출력
+            if page % 10 == 0 or len(all_results) >= total_count:
+                print(f"진행 중... {len(all_results)}/{total_count}건 수집 완료 (페이지 {page})")
+            
+            # 모든 결과를 가져왔으면 종료
+            if len(all_results) >= total_count:
+                break
+            
+            page += 1
+            
+            # 무한 루프 방지 (최대 1000페이지)
+            if page > 1000:
+                print(f"⚠️ 최대 페이지 수(1000)에 도달했습니다. 현재까지 {len(all_results)}건 수집했습니다.")
+                break
+            
+        except ET.ParseError as e:
+            print(f"페이지 {page} XML 파싱 오류: {e}")
+            if page == 1:
+                return []
+            break
+        except Exception as e:
+            print(f"페이지 {page} 조회 오류: {e}")
+            if page == 1:
+                import traceback
+                traceback.print_exc()
+                return []
+            break
+    
+    print(f"✅ 총 {len(all_results)}건 수집 완료")
+    return all_results
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
